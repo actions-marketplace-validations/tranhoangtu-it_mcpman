@@ -66,7 +66,8 @@ export async function checkMcpHandshake(
   return new Promise((resolve) => {
     let settled = false;
     const start = Date.now();
-    let stdout = "";
+    let stdoutBuf = "";
+    let stdoutCursor = 0; // tracks processed position — avoids O(n^2) re-splitting
 
     const child = spawn(command, args, {
       env: { ...process.env, ...env },
@@ -95,12 +96,15 @@ export async function checkMcpHandshake(
     });
 
     child.stdout?.on("data", (chunk: Buffer) => {
-      stdout += chunk.toString();
-      for (const line of stdout.split("\n")) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
+      stdoutBuf += chunk.toString();
+      // Scan only newly appended lines — avoids O(n^2) re-splitting
+      let newlineIdx: number;
+      while ((newlineIdx = stdoutBuf.indexOf("\n", stdoutCursor)) !== -1) {
+        const line = stdoutBuf.slice(stdoutCursor, newlineIdx).trim();
+        stdoutCursor = newlineIdx + 1;
+        if (!line) continue;
         try {
-          const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+          const parsed = JSON.parse(line) as Record<string, unknown>;
           if (parsed.jsonrpc === "2.0" && parsed.id === 1) {
             clearTimeout(timer);
             done({

@@ -24,9 +24,22 @@ export function sanitizeName(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+/**
+ * Escape a description string for safe interpolation into generated source files.
+ * Removes control characters and escapes backslashes, double-quotes, and backticks.
+ */
+export function escapeDescription(desc: string): string {
+  return desc
+    .replace(/[\x00-\x1f\x7f]/g, " ") // strip control chars
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/`/g, "\\`");
+}
+
 /** Generate Node (TypeScript) project files */
 export function generateNodeProject(options: ScaffoldOptions): Record<string, string> {
-  const { name, description } = options;
+  const { name } = options;
+  const description = escapeDescription(options.description);
 
   const packageJson = JSON.stringify(
     {
@@ -118,7 +131,8 @@ await server.connect(transport);
 
 /** Generate Python project files */
 export function generatePythonProject(options: ScaffoldOptions): Record<string, string> {
-  const { name, description } = options;
+  const { name } = options;
+  const description = escapeDescription(options.description);
 
   const pyprojectToml = `[build-system]
 requires = ["setuptools>=68"]

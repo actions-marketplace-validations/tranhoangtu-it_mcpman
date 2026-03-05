@@ -108,7 +108,8 @@ export async function testMcpServer(
 
   return new Promise((resolve) => {
     let settled = false;
-    let stdout = "";
+    let stdoutBuf = "";
+    let stdoutCursor = 0; // index into stdoutBuf where unprocessed data starts
     let initOk = false;
     let toolsOk = false;
     let tools: string[] = [];
@@ -154,16 +155,19 @@ export async function testMcpServer(
     });
 
     child.stdout?.on("data", (chunk: Buffer) => {
-      stdout += chunk.toString();
-      processLines();
+      stdoutBuf += chunk.toString();
+      processNewLines();
     });
 
-    function processLines() {
-      for (const line of stdout.split("\n")) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
+    function processNewLines() {
+      // Only scan newly appended data — avoids O(n^2) re-splitting
+      let newlineIdx: number;
+      while ((newlineIdx = stdoutBuf.indexOf("\n", stdoutCursor)) !== -1) {
+        const line = stdoutBuf.slice(stdoutCursor, newlineIdx).trim();
+        stdoutCursor = newlineIdx + 1;
+        if (!line) continue;
         try {
-          const msg = JSON.parse(trimmed) as Record<string, unknown>;
+          const msg = JSON.parse(line) as Record<string, unknown>;
           if (msg.jsonrpc !== "2.0") continue;
 
           // Response to initialize (id=1)

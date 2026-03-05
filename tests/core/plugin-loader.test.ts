@@ -23,9 +23,9 @@ vi.mock("../../src/core/config-service.js", () => {
   };
 });
 
-// Mock child_process.execSync to avoid real npm installs
+// Mock child_process.execFileSync to avoid real npm installs
 vi.mock("node:child_process", () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
 import {
@@ -37,7 +37,7 @@ import {
   type McpmanPlugin,
 } from "../../src/core/plugin-loader.js";
 import { readConfig, writeConfig } from "../../src/core/config-service.js";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 let tmpDir: string;
 
@@ -143,8 +143,9 @@ describe("installPluginPackage()", () => {
   it("calls npm install with correct prefix and registers in config", () => {
     installPluginPackage("my-plugin", tmpDir);
 
-    expect(execSync).toHaveBeenCalledWith(
-      expect.stringContaining("npm install"),
+    expect(execFileSync).toHaveBeenCalledWith(
+      "npm",
+      expect.arrayContaining(["install"]),
       expect.objectContaining({ stdio: "pipe" })
     );
 
@@ -173,8 +174,9 @@ describe("removePluginPackage()", () => {
     writeConfig({ plugins: ["remove-me", "keep-me"] } as Record<string, unknown>);
     removePluginPackage("remove-me", tmpDir);
 
-    expect(execSync).toHaveBeenCalledWith(
-      expect.stringContaining("npm uninstall"),
+    expect(execFileSync).toHaveBeenCalledWith(
+      "npm",
+      expect.arrayContaining(["uninstall"]),
       expect.objectContaining({ stdio: "pipe" })
     );
 
@@ -184,7 +186,7 @@ describe("removePluginPackage()", () => {
   });
 
   it("removes from config even if npm uninstall fails", () => {
-    vi.mocked(execSync).mockImplementation(() => { throw new Error("npm error"); });
+    vi.mocked(execFileSync).mockImplementation(() => { throw new Error("npm error"); });
     writeConfig({ plugins: ["fail-pkg"] } as Record<string, unknown>);
 
     removePluginPackage("fail-pkg", tmpDir);

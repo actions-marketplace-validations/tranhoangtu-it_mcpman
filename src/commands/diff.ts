@@ -9,6 +9,7 @@ import { defineCommand } from "citty";
 import pc from "picocolors";
 import type { ClientType } from "../clients/types.js";
 import { diffClientConfigs, loadClientConfig } from "../core/config-differ.js";
+import { CLIENT_DISPLAY } from "./shared-helpers.js";
 
 const VALID_CLIENTS: ClientType[] = [
   "claude-desktop",
@@ -23,18 +24,6 @@ const VALID_CLIENTS: ClientType[] = [
   "zed",
 ];
 
-const CLIENT_DISPLAY: Record<ClientType, string> = {
-  "claude-desktop": "Claude Desktop",
-  cursor: "Cursor",
-  vscode: "VS Code",
-  windsurf: "Windsurf",
-  "claude-code": "Claude Code",
-  "roo-code": "Roo Code",
-  "codex-cli": "Codex CLI",
-  opencode: "OpenCode",
-  continue: "Continue",
-  zed: "Zed",
-};
 
 export default defineCommand({
   meta: {

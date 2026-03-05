@@ -15,7 +15,8 @@ export interface ServerSource {
 }
 
 // Detect source type from user input (checks built-ins then plugins)
-export function detectSource(input: string): ServerSource {
+// Accepts an optional pre-loaded plugin list to avoid double loading.
+export function detectSource(input: string, plugins?: ReturnType<typeof loadAllPlugins>): ServerSource {
   if (input.startsWith("smithery:")) {
     return { type: "smithery", input: input.slice(9) };
   }
@@ -26,9 +27,9 @@ export function detectSource(input: string): ServerSource {
     return { type: "github", input: input };
   }
 
-  // Check plugin prefixes
-  const plugins = loadAllPlugins();
-  for (const plugin of plugins) {
+  // Check plugin prefixes — use provided list or load once
+  const loadedPlugins = plugins ?? loadAllPlugins();
+  for (const plugin of loadedPlugins) {
     if (input.startsWith(plugin.prefix)) {
       return { type: `plugin:${plugin.name}`, input: input.slice(plugin.prefix.length) };
     }
@@ -51,9 +52,12 @@ export function parseEnvFlags(envFlags: string | string[] | undefined): Record<s
   return result;
 }
 
-// Resolve server metadata from detected source
+// Resolve server metadata from detected source.
+// Loads plugins once and shares them between detectSource and resolution.
 export async function resolveServer(input: string): Promise<ServerMetadata> {
-  const source = detectSource(input);
+  // Load plugins once to avoid double-loading between detectSource and plugin resolution
+  const plugins = loadAllPlugins();
+  const source = detectSource(input, plugins);
   switch (source.type) {
     case "smithery":
       return resolveFromSmithery(source.input);
@@ -67,7 +71,6 @@ export async function resolveServer(input: string): Promise<ServerMetadata> {
       // Plugin-based resolution: type is "plugin:<name>"
       if (source.type.startsWith("plugin:")) {
         const pluginName = source.type.slice(7);
-        const plugins = loadAllPlugins();
         const plugin = plugins.find((p) => p.name === pluginName);
         if (plugin) {
           const resolved = await plugin.resolve(source.input);

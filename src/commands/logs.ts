@@ -9,7 +9,7 @@ import { defineCommand } from "citty";
 import pc from "picocolors";
 import { readLockfile } from "../core/lockfile.js";
 import { parseEnvFlags } from "../core/server-resolver.js";
-import { getMasterPassword, getSecretsForServer, listSecrets } from "../core/vault-service.js";
+import { loadVaultSecrets } from "./shared-helpers.js";
 
 export default defineCommand({
   meta: {
@@ -85,13 +85,3 @@ export default defineCommand({
   },
 });
 
-async function loadVaultSecrets(serverName: string): Promise<Record<string, string>> {
-  try {
-    const entries = listSecrets(serverName);
-    if (entries.length === 0 || entries[0].keys.length === 0) return {};
-    const password = await getMasterPassword();
-    return getSecretsForServer(serverName, password);
-  } catch {
-    return {};
-  }
-}

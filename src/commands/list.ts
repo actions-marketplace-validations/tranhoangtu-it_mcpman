@@ -3,6 +3,7 @@ import pc from "picocolors";
 import { quickHealthProbe } from "../core/health-checker.js";
 import { getInstalledServers } from "../core/server-inventory.js";
 import { json } from "../utils/logger.js";
+import { CLIENT_DISPLAY, pad, truncate } from "./shared-helpers.js";
 
 const STATUS_ICON = {
   healthy: pc.green("●"),
@@ -95,26 +96,6 @@ export default defineCommand({
   },
 });
 
-function pad(s: string, width: number): string {
-  return s.length >= width ? s : s + " ".repeat(width - s.length);
-}
-
-function truncate(s: string, max: number): string {
-  return s.length > max ? `${s.slice(0, max - 1)}…` : s;
-}
-
-const CLIENT_DISPLAY: Record<string, string> = {
-  "claude-desktop": "Claude",
-  cursor: "Cursor",
-  vscode: "VS Code",
-  windsurf: "Windsurf",
-  "claude-code": "Claude Code",
-  "roo-code": "Roo Code",
-  "codex-cli": "Codex CLI",
-  opencode: "OpenCode",
-  continue: "Continue",
-  zed: "Zed",
-};
 
 function formatClients(clients: string[]): string {
   return clients.map((c) => CLIENT_DISPLAY[c] ?? c).join(", ");

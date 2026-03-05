@@ -12,12 +12,12 @@ vi.mock("../../src/utils/paths.js", () => ({
   getNotifyFile: vi.fn(),
 }));
 
-// Mock execSync for shell hooks
+// Mock execFileSync for shell hooks (source uses execFileSync("sh", ["-c", command]))
 vi.mock("node:child_process", () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { getNotifyFile } from "../../src/utils/paths.js";
 import {
   addHook,
@@ -113,27 +113,27 @@ describe("fireEvent (shell hooks)", () => {
   beforeEach(() => {
     file = makeTmpFile();
     vi.mocked(getNotifyFile).mockReturnValue(file);
-    vi.mocked(execSync).mockReset();
+    vi.mocked(execFileSync).mockReset();
   });
   afterEach(() => cleanup(file));
 
-  it("calls execSync for shell hooks matching event", async () => {
+  it("calls execFileSync for shell hooks matching event", async () => {
     addHook("install", "shell", "echo installed");
     await fireEvent("install", { server: "pkg" });
-    expect(execSync).toHaveBeenCalledWith("echo installed", expect.objectContaining({ stdio: "inherit" }));
+    expect(execFileSync).toHaveBeenCalledWith("sh", ["-c", "echo installed"], expect.objectContaining({ stdio: "inherit" }));
   });
 
-  it("does not call execSync for non-matching events", async () => {
+  it("does not call execFileSync for non-matching events", async () => {
     addHook("remove", "shell", "echo removed");
     await fireEvent("install", { server: "pkg" });
-    expect(execSync).not.toHaveBeenCalled();
+    expect(execFileSync).not.toHaveBeenCalled();
   });
 
   it("passes MCPMAN_EVENT and MCPMAN_PAYLOAD env vars", async () => {
     addHook("update", "shell", "echo updated");
     await fireEvent("update", { server: "pkg", version: "1.0.0" });
-    const call = vi.mocked(execSync).mock.calls[0];
-    const opts = call[1] as { env: NodeJS.ProcessEnv };
+    const call = vi.mocked(execFileSync).mock.calls[0];
+    const opts = call[2] as { env: NodeJS.ProcessEnv };
     expect(opts.env.MCPMAN_EVENT).toBe("update");
     expect(opts.env.MCPMAN_PAYLOAD).toContain("pkg");
   });

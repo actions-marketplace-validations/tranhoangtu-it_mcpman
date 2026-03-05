@@ -16,19 +16,36 @@ export interface UpdateCheckCache {
 }
 
 // Compare two semver strings: -1 if a < b, 0 if equal, 1 if a > b
-// Non-numeric segments treated as opaque strings (equal unless different)
+// Handles pre-release suffixes (e.g. 1.0.0-alpha < 1.0.0) per semver spec.
 export function compareVersions(a: string, b: string): -1 | 0 | 1 {
-  const aParts = a.replace(/^v/, "").split(".").map(Number);
-  const bParts = b.replace(/^v/, "").split(".").map(Number);
+  // Strip leading "v"
+  const normalize = (v: string) => v.replace(/^v/, "");
+  const aNorm = normalize(a);
+  const bNorm = normalize(b);
+
+  // Split numeric core from optional pre-release (e.g. "1.2.3-alpha.1")
+  const [aCore, aPre] = aNorm.split("-", 2) as [string, string | undefined];
+  const [bCore, bPre] = bNorm.split("-", 2) as [string, string | undefined];
+
+  const aParts = aCore.split(".").map(Number);
+  const bParts = bCore.split(".").map(Number);
   const len = Math.max(aParts.length, bParts.length);
 
   for (let i = 0; i < len; i++) {
     const aN = aParts[i] ?? 0;
     const bN = bParts[i] ?? 0;
-    if (Number.isNaN(aN) || Number.isNaN(bN)) return 0; // non-numeric: treat as equal
+    if (Number.isNaN(aN) || Number.isNaN(bN)) return 0; // non-numeric core: treat as equal
     if (aN < bN) return -1;
     if (aN > bN) return 1;
   }
+
+  // Numeric cores are equal — compare pre-release per semver: no pre-release > pre-release
+  if (aPre === undefined && bPre === undefined) return 0;
+  if (aPre === undefined) return 1;  // 1.0.0 > 1.0.0-alpha
+  if (bPre === undefined) return -1; // 1.0.0-alpha < 1.0.0
+  // Both have pre-release: compare lexicographically
+  if (aPre < bPre) return -1;
+  if (aPre > bPre) return 1;
   return 0;
 }
 

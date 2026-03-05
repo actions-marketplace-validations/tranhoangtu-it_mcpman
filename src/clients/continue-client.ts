@@ -40,11 +40,13 @@ export class ContinueHandler extends BaseClientHandler {
 
   protected toClientConfig(raw: Record<string, unknown>): ClientConfig {
     const mcpArray = (raw.mcpServers ?? []) as Array<{ name: string } & ServerEntry>;
-    const servers: Record<string, ServerEntry> = {};
+    // Use a Map to deduplicate by name — last entry with a given name wins
+    const serverMap = new Map<string, ServerEntry>();
     for (const entry of mcpArray) {
       const { name, ...rest } = entry;
-      servers[name] = rest;
+      serverMap.set(name, rest);
     }
+    const servers: Record<string, ServerEntry> = Object.fromEntries(serverMap);
     return { servers };
   }
 

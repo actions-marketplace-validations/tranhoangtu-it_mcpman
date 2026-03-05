@@ -1,27 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// diagnostics.ts uses `const execAsync = promisify(exec)` at module level,
-// so we must mock the entire module and replace execAsync indirectly via
+// diagnostics.ts uses `const execFileAsync = promisify(execFile)` at module level,
+// so we must mock the entire module and replace execFileAsync indirectly via
 // mocking node:child_process BEFORE the module is first imported.
 vi.mock("node:child_process", () => {
-  const execMock = vi.fn();
-  return { exec: execMock };
+  const execFileMock = vi.fn();
+  return { execFile: execFileMock };
 });
 
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 
-// Helper to make exec call its callback with success or error
+// Helper to make execFile call its callback with success or error
 function stubExecSuccess(stdout: string) {
-  (exec as ReturnType<typeof vi.fn>).mockImplementationOnce(
-    (_cmd: string, cb: (err: null, result: { stdout: string; stderr: string }) => void) => {
+  (execFile as ReturnType<typeof vi.fn>).mockImplementationOnce(
+    (_cmd: string, _args: string[], cb: (err: null, result: { stdout: string; stderr: string }) => void) => {
       cb(null, { stdout, stderr: "" });
     }
   );
 }
 
 function stubExecError(msg: string) {
-  (exec as ReturnType<typeof vi.fn>).mockImplementationOnce(
-    (_cmd: string, cb: (err: Error) => void) => {
+  (execFile as ReturnType<typeof vi.fn>).mockImplementationOnce(
+    (_cmd: string, _args: string[], cb: (err: Error) => void) => {
       cb(new Error(msg));
     }
   );
@@ -31,7 +31,7 @@ import { checkEnvVars, checkRuntime } from "../../src/core/diagnostics.js";
 
 describe("diagnostics", () => {
   beforeEach(() => {
-    (exec as ReturnType<typeof vi.fn>).mockReset();
+    (execFile as ReturnType<typeof vi.fn>).mockReset();
   });
 
   describe("checkRuntime()", () => {
@@ -56,8 +56,9 @@ describe("diagnostics", () => {
       stubExecSuccess("/usr/local/bin/node\n");
       stubExecSuccess("v20.0.0\n");
       const result = await checkRuntime("npx");
-      const calls = (exec as ReturnType<typeof vi.fn>).mock.calls;
-      expect((calls[0][0] as string)).toContain("node");
+      const calls = (execFile as ReturnType<typeof vi.fn>).mock.calls;
+      // execFileAsync(locator, [runtimeCmd]) — runtimeCmd is in args array
+      expect((calls[0][1] as string[])).toContain("node");
       expect(result.passed).toBe(true);
     });
 
@@ -65,8 +66,9 @@ describe("diagnostics", () => {
       stubExecSuccess("/usr/bin/python3\n");
       stubExecSuccess("Python 3.11.0\n");
       const result = await checkRuntime("uvx");
-      const calls = (exec as ReturnType<typeof vi.fn>).mock.calls;
-      expect((calls[0][0] as string)).toContain("python3");
+      const calls = (execFile as ReturnType<typeof vi.fn>).mock.calls;
+      // execFileAsync(locator, [runtimeCmd]) — runtimeCmd is in args array
+      expect((calls[0][1] as string[])).toContain("python3");
       expect(result.passed).toBe(true);
     });
   });

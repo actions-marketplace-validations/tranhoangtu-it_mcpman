@@ -13,6 +13,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { APP_VERSION } from "../utils/constants.js";
+import { errorResult } from "./tool-helpers.js";
 import {
   auditSchema,
   doctorSchema,
@@ -105,10 +106,7 @@ function createServer(): Server {
       case "mcpman_info":    return handleInfo(safeArgs);
       case "mcpman_status":  return handleStatus(safeArgs);
       default:
-        return {
-          content: [{ type: "text" as const, text: `Unknown tool: ${name}` }],
-          isError: true,
-        };
+        return errorResult(`Unknown tool: ${name}`);
     }
   });
 

@@ -93,9 +93,9 @@ export default defineCommand({
       }
     }
 
+    const prev = getPinnedVersion(args.server);
     pinServer(args.server, version);
 
-    const prev = getPinnedVersion(args.server);
     if (prev && prev !== version) {
       console.log(
         `${pc.green("✓")} Re-pinned ${pc.cyan(args.server)} ${pc.dim(prev)} → ${pc.green(version)}`,

@@ -5,7 +5,7 @@
  * and registered in config.plugins[].
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -103,7 +103,8 @@ export function installPluginPackage(name: string, pluginDir = getPluginDir()): 
     );
   }
 
-  execSync(`npm install --prefix "${pluginDir}" ${name}`, {
+  // Use execFileSync with argument array to prevent shell injection from package name
+  execFileSync("npm", ["install", "--prefix", pluginDir, name], {
     stdio: "pipe",
     timeout: 60_000,
   });
@@ -122,7 +123,8 @@ export function installPluginPackage(name: string, pluginDir = getPluginDir()): 
  */
 export function removePluginPackage(name: string, pluginDir = getPluginDir()): void {
   try {
-    execSync(`npm uninstall --prefix "${pluginDir}" ${name}`, {
+    // Use execFileSync with argument array to prevent shell injection from package name
+    execFileSync("npm", ["uninstall", "--prefix", pluginDir, name], {
       stdio: "pipe",
       timeout: 60_000,
     });

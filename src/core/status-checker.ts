@@ -28,13 +28,16 @@ const MCP_INIT_REQUEST = JSON.stringify({
   },
 });
 
-/** Check if process for given command is running via ps aux */
+/** Check if process for given command is running via pgrep (more reliable than ps aux) */
 export function isProcessRunning(command: string): boolean {
   try {
-    const out = execSync("ps aux", { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
-    // Match on the binary name (last segment of path)
+    // Use the full command path as-is for pgrep -f matching; fall back to binary name.
+    // pgrep -f matches against the full argument list, reducing false positives.
     const bin = command.split("/").pop() ?? command;
-    return out.includes(bin);
+    // Escape regex metacharacters to prevent accidental pattern matches
+    const escaped = bin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    execSync(`pgrep -f "${escaped}"`, { stdio: ["pipe", "pipe", "pipe"] });
+    return true;
   } catch {
     return false;
   }
@@ -86,17 +89,19 @@ export async function probeServer(
       return;
     }
 
-    let stdout = "";
+    let stdoutBuf = "";
+    let stdoutCursor = 0; // tracks processed position — avoids O(n^2) re-splitting
 
     child.stdout?.on("data", (chunk: Buffer) => {
-      stdout += chunk.toString();
-      // Look for a JSON-RPC response line
-      const lines = stdout.split("\n");
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
+      stdoutBuf += chunk.toString();
+      // Scan only newly appended lines
+      let newlineIdx: number;
+      while ((newlineIdx = stdoutBuf.indexOf("\n", stdoutCursor)) !== -1) {
+        const line = stdoutBuf.slice(stdoutCursor, newlineIdx).trim();
+        stdoutCursor = newlineIdx + 1;
+        if (!line) continue;
         try {
-          const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+          const parsed = JSON.parse(line) as Record<string, unknown>;
           if (parsed.jsonrpc === "2.0" && "result" in parsed) {
             clearTimeout(timer);
             child?.kill();

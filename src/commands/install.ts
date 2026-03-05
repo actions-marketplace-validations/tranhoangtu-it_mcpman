@@ -131,10 +131,12 @@ async function restoreFromLockfile(): Promise<void> {
             ? entry.resolved
             : name;
 
-    await installServer(input, {
-      client: entry.clients[0],
-      yes: true,
-    });
+    for (const client of entry.clients) {
+      await installServer(input, {
+        client,
+        yes: true,
+      });
+    }
   }
 
   p.outro("Restore complete.");

@@ -4,19 +4,7 @@ import pc from "picocolors";
 import { getInstalledClients } from "../clients/client-detector.js";
 import type { ClientType } from "../clients/types.js";
 import { getInstalledServers } from "../core/server-inventory.js";
-
-const CLIENT_DISPLAY: Record<string, string> = {
-  "claude-desktop": "Claude",
-  cursor: "Cursor",
-  vscode: "VS Code",
-  windsurf: "Windsurf",
-  "claude-code": "Claude Code",
-  "roo-code": "Roo Code",
-  "codex-cli": "Codex CLI",
-  opencode: "OpenCode",
-  continue: "Continue",
-  zed: "Zed",
-};
+import { CLIENT_DISPLAY } from "./shared-helpers.js";
 
 function clientDisplayName(type: string): string {
   return CLIENT_DISPLAY[type] ?? type;

@@ -32,7 +32,8 @@ function measureOneRun(
   return new Promise((resolve, reject) => {
     const start = Date.now();
     let settled = false;
-    let stdout = "";
+    let stdoutBuf = "";
+    let stdoutCursor = 0; // tracks where we left off — avoids O(n^2) re-splitting
 
     const child = spawn(command, args, {
       env: { ...process.env, ...env },
@@ -65,12 +66,15 @@ function measureOneRun(
     });
 
     child.stdout?.on("data", (chunk: Buffer) => {
-      stdout += chunk.toString();
-      for (const line of stdout.split("\n")) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
+      stdoutBuf += chunk.toString();
+      // Scan only newly appended lines — avoids O(n^2) re-splitting
+      let newlineIdx: number;
+      while ((newlineIdx = stdoutBuf.indexOf("\n", stdoutCursor)) !== -1) {
+        const line = stdoutBuf.slice(stdoutCursor, newlineIdx).trim();
+        stdoutCursor = newlineIdx + 1;
+        if (!line) continue;
         try {
-          const msg = JSON.parse(trimmed) as Record<string, unknown>;
+          const msg = JSON.parse(line) as Record<string, unknown>;
           if (msg.jsonrpc === "2.0" && msg.id === 1) {
             clearTimeout(timer);
             finish();

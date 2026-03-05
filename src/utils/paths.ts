@@ -133,7 +133,7 @@ export function resolveConfigPath(client: ClientType): string {
       return path.join(home, ".codex", "config.toml");
 
     case "opencode":
-      // OpenCode uses ~/.config/opencode/opencode.json
+      // OpenCode follows XDG on all platforms (uses ~/.config even on macOS)
       return path.join(home, ".config", "opencode", "opencode.json");
 
     case "continue":
@@ -141,7 +141,11 @@ export function resolveConfigPath(client: ClientType): string {
       return path.join(home, ".continue", "config.yaml");
 
     case "zed":
-      // Zed uses ~/.config/zed/settings.json
+      // Zed on macOS uses ~/Library/Application Support/Zed/settings.json
+      // On Linux uses ~/.config/zed/settings.json
+      if (process.platform === "darwin") {
+        return path.join(home, "Library", "Application Support", "Zed", "settings.json");
+      }
       return path.join(home, ".config", "zed", "settings.json");
   }
 }

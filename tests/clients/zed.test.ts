@@ -36,7 +36,9 @@ describe("ZedHandler", () => {
   describe("getConfigPath()", () => {
     it("returns path containing zed and settings.json", () => {
       const configPath = handler.getConfigPath();
-      expect(configPath).toContain("zed");
+      // On macOS the path uses "Zed" (capitalized): ~/Library/Application Support/Zed/settings.json
+      // On Linux the path uses lowercase "zed": ~/.config/zed/settings.json
+      expect(configPath.toLowerCase()).toContain("zed");
       expect(configPath).toContain("settings.json");
     });
   });

@@ -9,7 +9,7 @@ import pc from "picocolors";
 import { ServerWatcher } from "../core/file-watcher-service.js";
 import { readLockfile } from "../core/lockfile.js";
 import { parseEnvFlags } from "../core/server-resolver.js";
-import { getMasterPassword, getSecretsForServer, listSecrets } from "../core/vault-service.js";
+import { loadVaultSecrets } from "./shared-helpers.js";
 
 const DEFAULT_EXTENSIONS = ["ts", "js", "json", "py", "mjs", "cjs"];
 const DEFAULT_DEBOUNCE_MS = 300;
@@ -117,13 +117,3 @@ export default defineCommand({
   },
 });
 
-async function loadVaultSecrets(serverName: string): Promise<Record<string, string>> {
-  try {
-    const entries = listSecrets(serverName);
-    if (entries.length === 0 || entries[0].keys.length === 0) return {};
-    const password = await getMasterPassword();
-    return getSecretsForServer(serverName, password);
-  } catch {
-    return {};
-  }
-}

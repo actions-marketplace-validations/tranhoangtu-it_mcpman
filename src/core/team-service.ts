@@ -187,13 +187,17 @@ export function getAuditLog(dir?: string): TeamAuditEntry[] {
 }
 
 function appendAudit(entry: Omit<TeamAuditEntry, "timestamp">, dir?: string): void {
-  const log = getAuditLog(dir);
-  log.push({ ...entry, timestamp: new Date().toISOString() });
   const filePath = auditFilePath(dir);
   const dirPath = teamDir(dir);
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
   try {
-    fs.writeFileSync(filePath, JSON.stringify(log, null, 2) + "\n", "utf-8");
+    // Read current log inside the try block so a read error is also caught
+    const log = getAuditLog(dir);
+    log.push({ ...entry, timestamp: new Date().toISOString() });
+    // Write atomically via temp file + rename to avoid partial writes
+    const tmp = `${filePath}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(log, null, 2) + "\n", "utf-8");
+    fs.renameSync(tmp, filePath);
   } catch {
     // Audit failures must never block primary operations
   }

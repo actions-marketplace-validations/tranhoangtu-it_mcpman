@@ -34,12 +34,18 @@ export class OpenCodeHandler extends BaseClientHandler {
     raw: Record<string, unknown>,
     config: ClientConfig,
   ): Record<string, unknown> {
+    const existingMcp = (raw.mcp ?? {}) as Record<string, Record<string, unknown>>;
     const mcp: Record<string, Record<string, unknown>> = {};
     for (const [name, entry] of Object.entries(config.servers)) {
+      // Skip entries without a command (remote/SSE entries have no command)
+      if (!entry.command) continue;
+      // Preserve existing enabled value; only default to true for new entries
+      const existingEnabled = existingMcp[name]?.enabled;
+      const enabled = existingEnabled !== undefined ? existingEnabled : true;
       mcp[name] = {
         type: "local",
         command: [entry.command, ...(entry.args ?? [])],
-        enabled: true,
+        enabled,
         ...(entry.env ? { environment: entry.env } : {}),
       };
     }

@@ -3,16 +3,7 @@ import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import { searchNpm, searchPlugins, searchSmithery } from "../core/registry-search.js";
 import type { NpmSearchResult, SmitherySearchResult } from "../core/registry-search.js";
-
-// Truncate string to max length, appending ellipsis if needed
-function truncate(s: string, max: number): string {
-  return s.length > max ? `${s.slice(0, max - 1)}…` : s;
-}
-
-// Pad string to fixed width (left-aligned)
-function pad(s: string, width: number): string {
-  return s.length >= width ? s : s + " ".repeat(width - s.length);
-}
+import { pad, truncate } from "./shared-helpers.js";
 
 // Highlight query substring in name using yellow color
 function highlightMatch(name: string, query: string): string {

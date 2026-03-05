@@ -4,7 +4,7 @@
  * Each entry: { command, timestamp, args }
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { getHistoryFile } from "../utils/paths.js";
 
@@ -74,8 +74,9 @@ export function replayCommand(index: number, file?: string): void {
   }
 
   const entry = reversed[index];
-  const fullCommand = ["mcpman", entry.command, ...entry.args].filter(Boolean).join(" ");
-  execSync(fullCommand, { stdio: "inherit" });
+  // Build arg array to avoid shell injection from stored command/args
+  const argv = ["mcpman", entry.command, ...entry.args].filter(Boolean);
+  execFileSync(argv[0] ?? "mcpman", argv.slice(1), { stdio: "inherit" });
 }
 
 /** Clear all history */

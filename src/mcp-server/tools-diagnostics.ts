@@ -82,10 +82,16 @@ export async function handleDoctor(args: Record<string, unknown>): Promise<CallT
 
     const results = await Promise.all(
       targets.map(([name, entry]) => {
+        // Build env map from lockfile envVars (list of required var names)
+        // Values are resolved from process.env; empty string signals "required but not set"
+        const env: Record<string, string> = {};
+        for (const varName of entry.envVars ?? []) {
+          env[varName] = process.env[varName] ?? "";
+        }
         const serverEntry: ServerEntry = {
           command: entry.command,
           args: entry.args,
-          env: {},
+          env,
           type: entry.transport as ServerEntry["type"],
           url: entry.url,
           headers: {},

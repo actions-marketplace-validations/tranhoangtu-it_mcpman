@@ -5,7 +5,7 @@
  * Events: install, remove, update, health-fail
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { getNotifyFile } from "../utils/paths.js";
 
@@ -105,5 +105,6 @@ function fireShell(command: string, event: HookEvent, payload: NotifyPayload): v
     MCPMAN_EVENT: event,
     MCPMAN_PAYLOAD: JSON.stringify(payload),
   };
-  execSync(command, { stdio: "inherit", env });
+  // Use execFileSync with explicit shell to prevent injection via PATH manipulation
+  execFileSync("sh", ["-c", command], { stdio: "inherit", env });
 }

@@ -17,6 +17,7 @@ import { computeDiff, computeDiffFromClient } from "../core/config-diff.js";
 import type { SyncAction } from "../core/config-diff.js";
 import { readLockfile } from "../core/lockfile.js";
 import { applySyncActions, getClientConfigs } from "../core/sync-engine.js";
+import { CLIENT_DISPLAY, pad } from "./shared-helpers.js";
 
 const VALID_CLIENTS: ClientType[] = [
   "claude-desktop",
@@ -31,18 +32,6 @@ const VALID_CLIENTS: ClientType[] = [
   "zed",
 ];
 
-const CLIENT_DISPLAY: Record<ClientType, string> = {
-  "claude-desktop": "Claude Desktop",
-  cursor: "Cursor",
-  vscode: "VS Code",
-  windsurf: "Windsurf",
-  "claude-code": "Claude Code",
-  "roo-code": "Roo Code",
-  "codex-cli": "Codex CLI",
-  opencode: "OpenCode",
-  continue: "Continue",
-  zed: "Zed",
-};
 
 export default defineCommand({
   meta: {
@@ -132,12 +121,12 @@ export default defineCommand({
 
     if (args["dry-run"]) {
       p.outro(pc.dim("Dry run — no changes applied."));
-      process.exit(1);
+      process.exit(0);
     }
 
     if (addCount === 0 && removeCount === 0) {
       p.outro(pc.dim("No additions needed. Extra servers left untouched."));
-      process.exit(1);
+      process.exit(0);
     }
 
     // Confirm before applying
@@ -220,6 +209,3 @@ function formatAction(action: "add" | "extra" | "remove" | "ok"): [string, strin
   }
 }
 
-function pad(s: string, width: number): string {
-  return s.length >= width ? s : s + " ".repeat(width - s.length);
-}

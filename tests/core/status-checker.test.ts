@@ -71,18 +71,18 @@ function makeFakeChild(opts: {
 describe("isProcessRunning", () => {
   afterEach(() => vi.mocked(execSync).mockReset());
 
-  it("returns true when command appears in ps output", () => {
-    vi.mocked(execSync).mockReturnValue("user  123  0.0  node server.js\n" as unknown as Buffer);
+  it("returns true when pgrep finds the process (execSync does not throw)", () => {
+    vi.mocked(execSync).mockReturnValue("123\n" as unknown as Buffer);
     expect(isProcessRunning("node")).toBe(true);
   });
 
-  it("returns false when command not in ps output", () => {
-    vi.mocked(execSync).mockReturnValue("user  123  0.0  python app.py\n" as unknown as Buffer);
+  it("returns false when pgrep finds no process (execSync throws)", () => {
+    vi.mocked(execSync).mockImplementation(() => { throw new Error("pgrep: no matching processes"); });
     expect(isProcessRunning("node")).toBe(false);
   });
 
   it("returns false when execSync throws", () => {
-    vi.mocked(execSync).mockImplementation(() => { throw new Error("ps failed"); });
+    vi.mocked(execSync).mockImplementation(() => { throw new Error("pgrep failed"); });
     expect(isProcessRunning("node")).toBe(false);
   });
 });

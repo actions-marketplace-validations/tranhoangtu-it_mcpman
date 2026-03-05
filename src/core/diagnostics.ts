@@ -1,7 +1,7 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface CheckResult {
   name: string;
@@ -16,12 +16,13 @@ export { checkProcessSpawn, checkMcpHandshake } from "./mcp-process-checks.js";
 
 /** Check if a runtime command is available on PATH */
 export async function checkRuntime(command: string): Promise<CheckResult> {
-  const cmd = process.platform === "win32" ? "where" : "which";
+  const locator = process.platform === "win32" ? "where" : "which";
   // Normalize: npx -> node, uvx -> python3
   const runtimeCmd = command === "npx" ? "node" : command === "uvx" ? "python3" : command;
 
   try {
-    const { stdout } = await execAsync(`${cmd} ${runtimeCmd}`);
+    // Use execFileAsync with argument array to prevent shell injection
+    const { stdout } = await execFileAsync(locator, [runtimeCmd]);
     const version = await getRuntimeVersion(runtimeCmd);
     return {
       name: "Runtime",
@@ -40,8 +41,9 @@ export async function checkRuntime(command: string): Promise<CheckResult> {
 
 async function getRuntimeVersion(cmd: string): Promise<string> {
   try {
-    const flag = cmd === "docker" ? "version --format '{{.Client.Version}}'" : "--version";
-    const { stdout } = await execAsync(`${cmd} ${flag}`);
+    // docker needs two separate args; avoid passing shell string
+    const args = cmd === "docker" ? ["version", "--format", "{{.Client.Version}}"] : ["--version"];
+    const { stdout } = await execFileAsync(cmd, args);
     const match = stdout.match(/\d+\.\d+[\.\d]*/);
     return match ? `v${match[0]}` : "";
   } catch {

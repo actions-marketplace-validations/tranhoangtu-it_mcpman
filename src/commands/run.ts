@@ -9,7 +9,7 @@ import { defineCommand } from "citty";
 import pc from "picocolors";
 import { readLockfile } from "../core/lockfile.js";
 import { parseEnvFlags } from "../core/server-resolver.js";
-import { getMasterPassword, getSecretsForServer, listSecrets } from "../core/vault-service.js";
+import { loadVaultSecrets } from "./shared-helpers.js";
 
 export default defineCommand({
   meta: {
@@ -92,24 +92,3 @@ export default defineCommand({
   },
 });
 
-/**
- * Attempt to load vault secrets for a server.
- * Returns {} silently on any error (missing vault, no secrets, wrong password).
- * Only prompts for master password if the server has stored vault entries.
- */
-async function loadVaultSecrets(serverName: string): Promise<Record<string, string>> {
-  try {
-    // Check for existing vault entries before prompting for password
-    const entries = listSecrets(serverName);
-    if (entries.length === 0 || entries[0].keys.length === 0) {
-      return {};
-    }
-
-    const password = await getMasterPassword();
-    return getSecretsForServer(serverName, password);
-  } catch {
-    // Warn but continue — vault secrets are optional
-    console.warn(pc.yellow("  Warning: Could not load vault secrets, continuing without them."));
-    return {};
-  }
-}

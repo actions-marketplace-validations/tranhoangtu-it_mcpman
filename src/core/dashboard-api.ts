@@ -29,12 +29,9 @@ interface CacheEntry<T> {
   expiresAt: number;
 }
 
-const healthCache: CacheEntry<unknown> | null = null;
-const auditCache: CacheEntry<unknown> | null = null;
-
 // Mutable cache holders
-let _healthCache: CacheEntry<unknown> | null = healthCache;
-let _auditCache: CacheEntry<unknown> | null = auditCache;
+let _healthCache: CacheEntry<unknown> | null = null;
+let _auditCache: CacheEntry<unknown> | null = null;
 
 function isCacheFresh(entry: CacheEntry<unknown> | null): boolean {
   return entry !== null && Date.now() < entry.expiresAt;
@@ -48,7 +45,7 @@ function jsonResponse(
   const body = JSON.stringify(data);
   res.writeHead(status, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:*",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   });

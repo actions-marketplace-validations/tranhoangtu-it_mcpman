@@ -8,12 +8,7 @@ import { createSpinner } from "nanospinner";
 import pc from "picocolors";
 import { getServerStatuses } from "../core/status-checker.js";
 import type { ServerStatus } from "../core/status-checker.js";
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function pad(s: string, width: number): string {
-  return s.length >= width ? s : s + " ".repeat(width - s.length);
-}
+import { pad } from "./shared-helpers.js";
 
 function formatStatus(s: ServerStatus): string {
   return s.alive ? pc.green("alive") : pc.red("dead");
