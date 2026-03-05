@@ -2,13 +2,13 @@
 
 [![npm version](https://img.shields.io/npm/v/mcpman)](https://www.npmjs.com/package/mcpman)
 [![npm downloads](https://img.shields.io/npm/dm/mcpman)](https://www.npmjs.com/package/mcpman)
-[![GitHub stars](https://img.shields.io/github/stars/tranhoangtu-it/mcpman)](https://github.com/tranhoangtu-it/mcpman)
-[![license](https://img.shields.io/npm/l/mcpman)](https://github.com/tranhoangtu-it/mcpman/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/tranhoangtu-it/openS-Plan-R)](https://github.com/tranhoangtu-it/openS-Plan-R)
+[![license](https://img.shields.io/npm/l/mcpman)](https://github.com/tranhoangtu-it/openS-Plan-R/blob/main/LICENSE)
 ![node](https://img.shields.io/node/v/mcpman)
 
 **The package manager for MCP servers.**
 
-Install, manage, and inspect Model Context Protocol servers across all your AI clients — Claude Desktop, Cursor, VS Code, and Windsurf — from a single CLI.
+Install, manage, and inspect Model Context Protocol servers across 10 AI clients — Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, Roo Code, Codex CLI, OpenCode, Continue, and Zed — from a single CLI.
 
 <p align="center">
   <img src="./demo.gif" alt="mcpman demo" width="700">
@@ -31,28 +31,61 @@ mcpman install @modelcontextprotocol/server-filesystem
 
 ## Features
 
-- **Universal** — manages servers for Claude Desktop, Cursor, VS Code, and Windsurf from one tool
-- **Registry-aware** — resolves packages from npm, Smithery, or GitHub URLs
+### Universal Client Support
+
+Manages servers for **10 AI clients** from one tool:
+
+| Client | Config Format |
+|--------|--------------|
+| Claude Desktop | JSON (`claude_desktop_config.json`) |
+| Claude Code CLI | JSON (`~/.claude.json`) |
+| Cursor | JSON (`~/.cursor/mcp.json`) |
+| VS Code | JSON (settings.json `mcp` section) |
+| Windsurf | JSON (`~/.codeium/windsurf/mcp_config.json`) |
+| Roo Code | JSON (`mcp_settings.json`) |
+| Codex CLI | TOML (`~/.codex/config.toml`) |
+| OpenCode | TOML (`~/.config/opencode/config.toml`) |
+| Continue | JSON (`~/.continue/config.json`) |
+| Zed | JSON (`~/.config/zed/settings.json`) |
+
+### Core
+
+- **Registry-aware** — resolves packages from npm, Smithery, GitHub URLs, or the mcpman community registry
 - **Lockfile** — tracks installed servers in `mcpman.lock` for reproducible setups
 - **Health checks** — verifies runtimes, env vars, and server connectivity with `doctor`
-- **Encrypted secrets** — store API keys in an AES-256 encrypted vault instead of plaintext JSON; auto-loads during install
+- **Encrypted secrets** — store API keys in an AES-256 encrypted vault; auto-loads during install
 - **Config sync** — keep server configs consistent across all your AI clients; `--remove` cleans extras
 - **Security audit** — scan servers for vulnerabilities with trust scoring; `--fix` auto-updates vulnerable packages
 - **Auto-update** — get notified when server updates are available
-- **Plugin system** — extend mcpman with npm-based plugins for custom registries (e.g. Ollama, HuggingFace)
-- **Export/Import** — portable JSON bundles for full config migration across machines
-- **Server testing** — validate MCP servers respond to JSON-RPC initialize + tools/list
-- **Log streaming** — stream stdout/stderr from servers in real time
-- **Profiles** — save/restore named server configurations for quick switching
-- **Self-upgrade** — update mcpman itself with a single command
-- **Interactive prompts** — guided installation with env var configuration
-- **No extra daemon** — pure CLI, works anywhere Node ≥ 20 runs
+- **No extra daemon** — pure CLI, works anywhere Node >= 20 runs
+
+### v2.0 Platform Features
+
+- **MCP Server Mode** — run mcpman itself as an MCP server with `mcpman serve`. AI agents can install, audit, and manage servers via 8 programmatic tools. Write protection via `--allow-write`
+- **Remote Transport** — connect to remote MCP servers over HTTP and SSE. No local process needed
+- **Registry & Publishing** — publish your own MCP servers with `mcpman publish`. Community registry powered by Cloudflare D1/R2
+- **Embedded Dashboard** — launch a local HTTP dashboard with `mcpman dashboard`. REST API with server status, audit results, and health checks
+- **Team Collaboration** — share server configs with `mcpman team`. RBAC roles (admin/maintainer/viewer), shared vault, and audit logging
+- **Skills & Agent Sync** — universal `mcpman-skill.json` spec with format adapters for all 10 clients. Sync agent configs, tools, models, and rules across editors
+
+### Developer Tools
+
+- **Server scaffolding** — `mcpman create` with Node.js and Python templates
+- **Local dev linking** — `mcpman link` registers a local directory (like `npm link`)
+- **File watching** — `mcpman watch` auto-restarts on source changes
+- **Plugin system** — extend mcpman with npm-based plugins for custom registries
+- **Shell completions** — tab-complete commands and server names in bash, zsh, and fish
+- **Export/Import** — portable JSON bundles for full config migration
+- **Profiles** — save/restore named server configurations
+- **Auto-rollback** — snapshots before every lockfile write, restore with `mcpman rollback`
 
 ---
 
 ## Commands
 
-### `install <server>`
+### Core
+
+#### `install <server>`
 
 Install an MCP server and register it with your AI clients.
 
@@ -60,24 +93,24 @@ Install an MCP server and register it with your AI clients.
 mcpman install @modelcontextprotocol/server-filesystem
 mcpman install my-smithery-server
 mcpman install https://github.com/owner/repo
+mcpman install mcpman:my-registry-server    # from mcpman registry
 ```
 
 **Options:**
-- `--client <type>` — target a specific client (`claude-desktop`, `cursor`, `vscode`, `windsurf`)
+- `--client <type>` — target a specific client (`claude-desktop`, `cursor`, `vscode`, `windsurf`, `claude-code`, `roo-code`, `codex-cli`, `opencode`, `continue`, `zed`)
 - `--json` — output machine-readable JSON
 
-### `list`
+#### `list`
 
 List all installed MCP servers.
 
 ```sh
 mcpman list
+mcpman list --client cursor
 mcpman list --json
 ```
 
-Shows server name, version, runtime, source, and which clients have it registered.
-
-### `remove <server>`
+#### `remove <server>`
 
 Uninstall a server and deregister it from all clients.
 
@@ -85,7 +118,28 @@ Uninstall a server and deregister it from all clients.
 mcpman remove @modelcontextprotocol/server-filesystem
 ```
 
-### `doctor [server]`
+#### `update [server]`
+
+Check for and apply updates to installed MCP servers.
+
+```sh
+mcpman update            # update all servers
+mcpman update my-server  # update specific server
+mcpman update --check    # check only, don't apply
+```
+
+#### `upgrade`
+
+Upgrade mcpman itself to the latest version.
+
+```sh
+mcpman upgrade
+mcpman upgrade --check
+```
+
+### Health & Diagnostics
+
+#### `doctor [server]`
 
 Run health diagnostics on all installed servers or a specific one.
 
@@ -96,17 +150,83 @@ mcpman doctor my-server
 
 Checks: runtime availability, required env vars, process spawn, and MCP handshake.
 
-### `init`
+#### `test [server]`
 
-Scaffold an `mcpman.lock` file in the current directory for project-scoped server management.
+Validate MCP server connectivity via JSON-RPC `initialize` + `tools/list`.
+
+```sh
+mcpman test my-server
+mcpman test --all
+```
+
+#### `validate [--client <name>]`
+
+Validate lockfile schema and client config JSON for correctness.
+
+```sh
+mcpman validate
+mcpman validate --client cursor
+```
+
+#### `status [--server <name>]`
+
+Show live process status of all installed MCP servers.
+
+```sh
+mcpman status
+mcpman status --server my-server --json
+```
+
+#### `bench <server>`
+
+Benchmark MCP server latency with JSON-RPC initialize calls.
+
+```sh
+mcpman bench my-server --runs 10
+mcpman bench my-server --timeout 5000
+```
+
+### Config & Sync
+
+#### `init`
+
+Scaffold an `mcpman.lock` file in the current directory.
 
 ```sh
 mcpman init
 ```
 
-### `secrets`
+#### `config <set|get|list|reset>`
 
-Manage encrypted secrets for MCP servers (API keys, tokens, etc.).
+Manage persistent CLI configuration.
+
+```sh
+mcpman config set defaultClient cursor
+mcpman config get defaultClient
+mcpman config list
+```
+
+#### `sync`
+
+Sync MCP server configs across all detected AI clients.
+
+```sh
+mcpman sync
+mcpman sync --dry-run
+mcpman sync --source cursor --remove
+```
+
+#### `diff <client-a> <client-b>`
+
+Show visual diff of MCP server configs between two clients.
+
+```sh
+mcpman diff claude-desktop cursor
+```
+
+#### `secrets`
+
+Manage encrypted secrets (AES-256-CBC vault).
 
 ```sh
 mcpman secrets set my-server OPENAI_API_KEY=sk-...
@@ -114,407 +234,265 @@ mcpman secrets list my-server
 mcpman secrets remove my-server OPENAI_API_KEY
 ```
 
-Secrets are stored in `~/.mcpman/vault.enc` using AES-256-CBC encryption with PBKDF2 key derivation. During `install`, vault secrets are auto-loaded to pre-fill env vars, and new credentials can be saved after installation.
-
-### `sync`
-
-Sync MCP server configs across all detected AI clients.
-
-```sh
-mcpman sync              # sync all servers to all clients
-mcpman sync --dry-run    # preview changes without applying
-mcpman sync --source cursor  # use Cursor config as source of truth
-mcpman sync --remove     # remove servers not in lockfile from clients
-```
-
-**Options:**
-- `--dry-run` — preview changes without applying
-- `--source <client>` — use a specific client config as source of truth
-- `--remove` — remove extra servers from clients that aren't tracked in lockfile
-- `--yes` — skip confirmation prompts
-
-### `audit [server]`
-
-Scan installed servers for security vulnerabilities and compute trust scores.
-
-```sh
-mcpman audit             # audit all servers
-mcpman audit my-server   # audit specific server
-mcpman audit --json      # machine-readable output
-mcpman audit --fix       # auto-update vulnerable servers
-mcpman audit --fix --yes # auto-update without confirmation
-```
-
-Trust score (0–100) based on: vulnerability count, download velocity, package age, publish frequency, and maintainer signals.
-
-The `--fix` flag checks for newer versions of vulnerable npm packages, updates them, and re-scans to verify the fixes.
-
-### `update [server]`
-
-Check for and apply updates to installed MCP servers.
-
-```sh
-mcpman update            # update all servers
-mcpman update my-server  # update specific server
-mcpman update --check    # check only, don't apply
-```
-
-### `config <set|get|list|reset>`
-
-Manage persistent CLI configuration at `~/.mcpman/config.json`.
-
-```sh
-mcpman config set defaultClient cursor
-mcpman config get defaultClient
-mcpman config list
-mcpman config reset
-```
-
-Keys: `defaultClient`, `updateCheckInterval`, `preferredRegistry`, `vaultTimeout`, `plugins`.
-
-### `search <query>`
-
-Search for MCP servers on npm or Smithery registry.
-
-```sh
-mcpman search filesystem
-mcpman search brave --registry smithery
-mcpman search tools --all        # include plugin registries
-mcpman search tools --limit 10
-```
-
-**Options:**
-- `--registry <npm|smithery>` — registry to search (default: npm)
-- `--limit <n>` — max results (default: 20, max: 100)
-- `--all` — include plugin registries in results
-
-### `info <server>`
-
-Show detailed information about an MCP server package.
-
-```sh
-mcpman info @modelcontextprotocol/server-filesystem
-mcpman info my-server --json
-```
-
-### `run <server>`
-
-Launch an MCP server with vault secrets auto-injected into the process environment.
-
-```sh
-mcpman run my-server
-mcpman run my-server --env API_KEY=sk-...
-```
-
-### `upgrade`
-
-Upgrade mcpman itself to the latest version from npm.
-
-```sh
-mcpman upgrade           # check and install latest
-mcpman upgrade --check   # only check, don't install
-```
-
-### `test [server]`
-
-Validate MCP server connectivity by sending JSON-RPC `initialize` + `tools/list`.
-
-```sh
-mcpman test my-server    # test a specific server
-mcpman test --all        # test all installed servers
-```
-
-Reports pass/fail, response time, and discovered tools for each server.
-
-### `logs <server>`
-
-Stream stdout/stderr from an MCP server process in real time.
-
-```sh
-mcpman logs my-server    # stream logs (Ctrl+C to stop)
-```
-
-Vault secrets are auto-injected into the server environment.
-
-### `profiles <create|switch|list|delete>`
-
-Manage named server configuration profiles for quick switching.
-
-```sh
-mcpman profiles create dev           # snapshot current servers as "dev"
-mcpman profiles create prod -d "Production config"
-mcpman profiles list                 # show all profiles
-mcpman profiles switch dev           # apply "dev" profile to lockfile
-mcpman profiles delete old           # remove a profile
-```
-
-After switching, run `mcpman sync` to apply the profile to all clients.
-
-### `plugin <add|remove|list>`
-
-Manage mcpman plugins for custom registries.
-
-```sh
-mcpman plugin add mcpman-plugin-ollama    # install plugin
-mcpman plugin remove mcpman-plugin-ollama # uninstall plugin
-mcpman plugin list                        # show installed plugins
-```
-
-Plugins are npm packages that export a `McpmanPlugin` interface with `name`, `prefix`, and `resolve()`. Once installed, their prefix (e.g. `ollama:`) works with `mcpman install ollama:my-model`.
-
-### `export [output-file]`
-
-Export mcpman config, lockfile, vault, and plugins to a portable JSON file.
-
-```sh
-mcpman export                    # default: mcpman-export.json
-mcpman export backup.json
-mcpman export --no-vault         # exclude encrypted vault
-mcpman export --no-plugins       # exclude plugin list
-```
-
-### `import <file>`
-
-Restore mcpman config, lockfile, vault, and plugins from an export bundle.
-
-```sh
-mcpman import mcpman-export.json
-mcpman import backup.json --yes       # skip confirmation
-mcpman import backup.json --dry-run   # preview without applying
-```
-
-### `create [name]`
-
-Scaffold a new MCP server project with working boilerplate.
-
-```sh
-mcpman create my-server              # interactive prompts
-mcpman create my-server --yes        # accept defaults
-mcpman create my-server --runtime python  # Python template
-```
-
-Generates `package.json` (with `mcp` field), `src/index.ts`, and `tsconfig.json` for Node; or `pyproject.toml` and `main.py` for Python. Both templates implement the MCP protocol with a sample `hello` tool ready to run.
-
-### `link [dir]`
-
-Register a local MCP server directory with AI clients — like `npm link` but for MCP.
-
-```sh
-mcpman link .                        # link current directory
-mcpman link ./path/to/server         # link specific directory
-mcpman link . --client cursor        # link to specific client only
-mcpman link . --name my-override     # override detected server name
-```
-
-Reads `package.json` or `pyproject.toml` to detect name, version, and entry point. Adds a lockfile entry with `source: "local"` and registers the absolute path in client configs. No file copying — edits are picked up immediately.
-
-### `watch <server>`
-
-Watch a local MCP server's source files and auto-restart on changes — like nodemon, built into mcpman.
-
-```sh
-mcpman watch my-server               # watch with defaults
-mcpman watch my-server --dir ./src   # override watch directory
-mcpman watch my-server --ext ts,js   # watch specific extensions
-mcpman watch my-server --delay 500   # set debounce delay (ms)
-mcpman watch my-server --clear       # clear terminal on restart
-```
-
-Uses Node.js built-in `fs.watch` (no chokidar). Debounces 300ms by default. Ignores `node_modules/`, `dist/`, `.git/`, `__pycache__/`. Vault secrets are injected same as `mcpman run`.
-
-### `registry <list|add|remove|set-default>`
-
-Manage custom registry URLs for MCP server resolution.
-
-```sh
-mcpman registry list                              # show all registries
-mcpman registry add corp https://mcp.corp.com/api # add custom registry
-mcpman registry remove corp                       # remove custom registry
-mcpman registry set-default smithery             # change default registry
-```
-
-Built-in registries (npm, smithery) are always present and cannot be removed. Custom registries are stored in `~/.mcpman/config.json`.
-
-### `completions <bash|zsh|fish|install>`
-
-Generate shell completion scripts for tab-completion of commands and server names.
-
-```sh
-mcpman completions bash              # output bash completion script
-mcpman completions zsh               # output zsh completion script
-mcpman completions fish              # output fish completion script
-mcpman completions install           # auto-detect shell and install
-source <(mcpman completions bash)    # enable completions in current session
-```
-
-Completes: subcommands, server names (from lockfile), client types (`--client`), and runtimes (`--runtime`). Server names are resolved dynamically at completion time so they stay fresh.
-
-### `why <server>`
-
-Show why a server is installed — source, clients, profiles, env vars.
-
-```sh
-mcpman why my-server                 # full provenance output
-mcpman why my-server --json          # JSON output for scripting
-```
-
-Displays: source (npm/smithery/github/local), resolved URL, version, installed timestamp, which clients have it registered, which named profiles include it, and required env var names. Detects orphaned servers (in client config but not in lockfile) and suggests `mcpman sync --remove`.
-
-### `env <set|get|list|del|clear>`
+#### `env <set|get|list|del|clear>`
 
 Manage per-server environment variables (non-sensitive defaults).
 
 ```sh
 mcpman env set my-server API_URL=https://api.example.com
-mcpman env get my-server API_URL
 mcpman env list my-server
-mcpman env del my-server API_URL
-mcpman env clear my-server
 ```
 
-Stored in `~/.mcpman/env/<server>.json`. For sensitive values, use `mcpman secrets` instead. At runtime, vault secrets take priority over env defaults.
+### Discovery & Registry
 
-### `bench <server>`
+#### `search <query>`
 
-Benchmark MCP server latency with JSON-RPC initialize calls.
+Search for MCP servers on npm, Smithery, or mcpman registry.
 
 ```sh
-mcpman bench my-server               # 5 runs (default)
-mcpman bench my-server --runs 10     # custom run count
-mcpman bench my-server --json        # machine-readable output
-mcpman bench my-server --timeout 5000 # exit 1 if p95 > 5s
+mcpman search filesystem
+mcpman search brave --registry smithery
+mcpman search tools --all --limit 10
 ```
 
-Reports min, max, avg, p50, p95 response times in milliseconds.
+#### `info <server>`
 
-### `diff <client-a> <client-b>`
-
-Show visual diff of MCP server configs between two AI clients.
+Show detailed information about an MCP server package.
 
 ```sh
-mcpman diff claude-desktop cursor     # color-coded diff
-mcpman diff vscode windsurf --json    # JSON output
+mcpman info @modelcontextprotocol/server-filesystem
 ```
 
-Displays added (green), removed (red), and changed (yellow) servers between two client configurations. Useful before running `mcpman sync`.
+#### `why <server>`
 
-### `group <add|rm|list|delete|install|run>`
+Show why a server is installed — source, clients, profiles, env vars.
+
+```sh
+mcpman why my-server
+```
+
+#### `publish`
+
+Publish an MCP server to the mcpman community registry.
+
+```sh
+mcpman publish
+mcpman publish --registry https://registry.mcpman.dev
+```
+
+#### `registry <list|add|remove|set-default>`
+
+Manage custom registry URLs.
+
+```sh
+mcpman registry list
+mcpman registry add corp https://mcp.corp.com/api
+mcpman registry remove corp
+```
+
+### Server Authoring
+
+#### `create [name]`
+
+Scaffold a new MCP server project.
+
+```sh
+mcpman create my-server
+mcpman create my-server --runtime python
+```
+
+#### `link [dir]`
+
+Register a local MCP server directory with AI clients.
+
+```sh
+mcpman link .
+mcpman link ./path/to/server --client cursor
+```
+
+#### `watch <server>`
+
+Watch source files and auto-restart on changes.
+
+```sh
+mcpman watch my-server
+mcpman watch my-server --ext ts,js --delay 500
+```
+
+### Organization
+
+#### `profiles <create|switch|list|delete>`
+
+Manage named server configuration profiles.
+
+```sh
+mcpman profiles create dev
+mcpman profiles switch dev
+mcpman profiles list
+```
+
+#### `group <add|rm|list|delete|install|run>`
 
 Organize servers into named groups for batch operations.
 
 ```sh
-mcpman group add work server-a server-b   # tag servers
-mcpman group rm work server-b             # untag server
-mcpman group list                         # show all groups
-mcpman group list work                    # show group members
-mcpman group install work                 # install all in group
-mcpman group run work                     # run all concurrently
-mcpman group delete work                  # remove entire group
+mcpman group add work server-a server-b
+mcpman group install work
+mcpman group run work
 ```
 
-Groups are lightweight labels stored in `~/.mcpman/groups.json`. Unlike profiles (full snapshots), groups are just server name lists for convenience.
+#### `pin <server> [version]`
 
-### `pin <server> [version]`
-
-Pin a server to a specific version to prevent auto-updates.
+Pin a server to a specific version.
 
 ```sh
-mcpman pin my-server 1.2.3           # pin to exact version
-mcpman pin my-server                 # pin to current version
-mcpman pin --unpin my-server         # remove pin
-mcpman pin --list                    # show all pinned servers
+mcpman pin my-server 1.2.3
+mcpman pin --unpin my-server
 ```
 
-Pinned servers are skipped by `mcpman update` and version check notifications. Pins stored in `~/.mcpman/pins.json`.
-
-### `rollback [index]`
+#### `rollback [index]`
 
 Restore a previous lockfile state from automatic snapshots.
 
 ```sh
-mcpman rollback --list               # show snapshot history
-mcpman rollback 0                    # restore most recent snapshot
-mcpman rollback 2                    # restore specific snapshot
+mcpman rollback --list
+mcpman rollback 0
 ```
 
-Snapshots are created automatically before every lockfile write. Keeps the last 5 snapshots in `~/.mcpman/rollback/`. After rollback, run `mcpman sync` to apply to all clients.
+#### `template <save|apply|list|delete>`
 
-### `validate [--client <name>]`
-
-Validate lockfile schema and client config JSON for correctness.
+Save and share install templates.
 
 ```sh
-mcpman validate                      # validate lockfile + all clients
-mcpman validate --client cursor      # validate specific client only
-mcpman validate --json               # machine-readable output
+mcpman template save myteam
+mcpman template apply myteam
 ```
 
-Checks: required fields (name, version, source, command, args), valid JSON structure, mcpServers entries have command+args. Exits 1 if any errors found. Distinct from `doctor` (which checks runtime health).
+### Platform (v2.0)
 
-### `status [--server <name>]`
+#### `serve`
 
-Show live process status of all installed MCP servers.
+Run mcpman as an MCP server over stdio transport. AI agents can call 8 tools: `mcpman_install`, `mcpman_remove`, `mcpman_list`, `mcpman_search`, `mcpman_audit`, `mcpman_doctor`, `mcpman_info`, `mcpman_status`.
 
 ```sh
-mcpman status                        # check all servers
-mcpman status --server my-server     # check specific server
-mcpman status --json                 # JSON output
+mcpman serve                 # read-only mode (default)
+mcpman serve --allow-write   # enable destructive operations (remove)
 ```
 
-Probes each server with a JSON-RPC `initialize` call (3s timeout). Reports: alive/dead status, response time, and error details.
+#### `dashboard`
 
-### `replay [index]`
+Launch an embedded HTTP dashboard with REST API endpoints.
+
+```sh
+mcpman dashboard
+mcpman dashboard --port 8080
+```
+
+Endpoints: `/api/servers`, `/api/clients`, `/api/health`, `/api/audit`, `/api/status`.
+
+#### `team <init|add|remove|list|sync|share|audit>`
+
+Team collaboration with RBAC and shared vault.
+
+```sh
+mcpman team init my-team               # initialize team config
+mcpman team add alice --role maintainer # add team member
+mcpman team sync                       # sync team servers to local
+mcpman team share                      # share local servers to team
+mcpman team audit                      # view audit log
+```
+
+Roles: `admin` (full access), `maintainer` (add/remove servers), `viewer` (read-only).
+
+#### `skill <install|list|remove|sync|export>`
+
+Manage MCP server skills with universal spec.
+
+```sh
+mcpman skill install ./my-skill
+mcpman skill sync --client claude-code
+mcpman skill list
+```
+
+#### `agent <sync|list|export>`
+
+Sync agent configurations across AI clients.
+
+```sh
+mcpman agent sync
+mcpman agent list
+mcpman agent export --client roo-code
+```
+
+### Operations
+
+#### `run <server>`
+
+Launch an MCP server with vault secrets auto-injected.
+
+```sh
+mcpman run my-server
+```
+
+#### `logs <server>`
+
+Stream stdout/stderr from an MCP server process.
+
+```sh
+mcpman logs my-server
+```
+
+#### `notify <add|remove|list|test>`
+
+Configure webhook and shell hooks for lifecycle events.
+
+```sh
+mcpman notify add --event install --webhook https://hooks.example.com/mcp
+mcpman notify test install
+```
+
+#### `replay [index]`
 
 Re-run previous CLI commands from history.
 
 ```sh
-mcpman replay --list                 # show last 20 commands
-mcpman replay 0                     # re-run most recent command
-mcpman replay 5                     # re-run 5th command
+mcpman replay --list
+mcpman replay 0
 ```
 
-Maintains a ring buffer of the last 50 commands at `~/.mcpman/history.json`. Each entry includes the command, arguments, and timestamp.
+#### `alias <add|remove|list>`
 
-### `alias <add|remove|list>`
-
-Create short aliases for frequently used commands.
+Create command shorthands.
 
 ```sh
-mcpman alias add dev "group run dev-servers"
 mcpman alias add fs "install @modelcontextprotocol/server-filesystem"
-mcpman alias remove dev
-mcpman alias list
 ```
 
-Aliases stored in `~/.mcpman/aliases.json`. Unlike groups (server batches), aliases are command-line shorthands.
+#### `export / import`
 
-### `template <save|apply|list|delete>`
-
-Save and share install templates for team onboarding.
+Portable config migration.
 
 ```sh
-mcpman template save myteam          # snapshot current servers
-mcpman template save myteam -d "Team setup"
-mcpman template apply myteam         # print install commands
-mcpman template list                 # show all templates
-mcpman template delete myteam        # remove template
+mcpman export backup.json
+mcpman import backup.json --dry-run
 ```
 
-Templates stored in `~/.mcpman/templates/`. Unlike `export` (full migration bundle with vault+plugins), templates are lightweight server presets for sharing.
+#### `plugin <add|remove|list>`
 
-### `notify <add|remove|list|test>`
-
-Configure webhook and shell hooks for server lifecycle events.
+Manage npm-based plugins for custom registries.
 
 ```sh
-mcpman notify add --event install --webhook https://hooks.example.com/mcp
-mcpman notify add --event health-fail --shell "echo alert | mail admin"
-mcpman notify list                   # show all hooks
-mcpman notify remove 0              # remove hook by index
-mcpman notify test install           # fire test event
+mcpman plugin add mcpman-plugin-ollama
 ```
 
-Events: `install`, `remove`, `update`, `health-fail`. Webhooks use native `fetch()`, shell hooks use `execSync`. Hooks stored in `~/.mcpman/notify.json`.
+#### `completions <bash|zsh|fish|install>`
+
+Generate shell completion scripts.
+
+```sh
+source <(mcpman completions bash)
+mcpman completions install
+```
 
 ---
 
@@ -522,41 +500,27 @@ Events: `install`, `remove`, `update`, `health-fail`. Webhooks use native `fetch
 
 | Feature | mcpman | Smithery CLI | mcpm.sh |
 |---|---|---|---|
-| Multi-client support | All 4 clients | Claude only | Limited |
+| Multi-client support | **All 10 clients** | Claude only | Limited |
 | Lockfile | `mcpman.lock` | None | None |
 | Health checks | Runtime + env + process | None | None |
 | Encrypted secrets | AES-256 vault | None | None |
 | Config sync | Cross-client + `--remove` | None | None |
 | Security audit | Trust scoring + auto-fix | None | None |
-| CI/CD | GitHub Actions | None | None |
-| Auto-update | Version check + notify | None | None |
-| Registry sources | npm + Smithery + GitHub | Smithery only | npm only |
+| MCP server mode | 8 tools via stdio | None | None |
+| Remote transport | HTTP + SSE | None | None |
+| Dashboard | REST API + UI | None | None |
+| Team collaboration | RBAC + audit log | None | None |
+| Skills & agent sync | Universal spec + adapters | None | None |
+| Registry & publishing | npm + Smithery + GitHub + mcpman | Smithery only | npm only |
 | Plugin system | npm-based custom registries | None | None |
-| Export/Import | Full config portability | None | None |
-| Server testing | JSON-RPC validation | None | None |
-| Log streaming | Real-time stdout/stderr | None | None |
-| Profiles | Named config switching | None | None |
-| Self-upgrade | Built-in CLI updater | None | None |
-| Interactive setup | Yes | Partial | No |
-| Project-scoped | Yes (`init`) | No | No |
-| Server scaffolding | `create` (Node + Python) | None | None |
+| Server scaffolding | Node + Python templates | None | None |
 | Local dev linking | `link` (like npm link) | None | None |
 | File watching | `watch` (auto-restart) | None | None |
-| Custom registries | `registry` CRUD | None | None |
 | Shell completions | bash + zsh + fish | None | None |
-| Provenance query | `why` (clients + profiles) | None | None |
-| Env management | Per-server env var CRUD | None | None |
-| Benchmarking | Latency p50/p95 stats | None | None |
-| Config diff | Visual client diff | None | None |
-| Server groups | Batch install/run tags | None | None |
-| Version pinning | `pin`/`unpin` CLI | None | None |
-| Rollback | Auto-snapshot + restore | None | None |
-| Config validation | Schema + JSON checks | None | None |
-| Live status | Process probe + response time | None | None |
-| Command replay | History ring buffer | None | None |
-| Command aliases | Shorthand definitions | None | None |
-| Install templates | Sharable server presets | None | None |
-| Event notifications | Webhook + shell hooks | None | None |
+| Export/Import | Full config portability | None | None |
+| Profiles | Named config switching | None | None |
+| Auto-rollback | Snapshot + restore | None | None |
+| CI/CD | GitHub Actions | None | None |
 
 ---
 
@@ -564,7 +528,7 @@ Events: `install`, `remove`, `update`, `health-fail`. Webhooks use native `fetch
 
 1. Fork the repo and create a feature branch
 2. `npm install` to install dependencies
-3. `npm test` to run the test suite
+3. `npm test` to run the test suite (1,123 tests)
 4. Submit a pull request with a clear description
 
 Please follow the existing code style (TypeScript strict, ES modules).
