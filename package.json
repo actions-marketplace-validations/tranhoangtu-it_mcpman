@@ -1,6 +1,6 @@
 {
   "name": "mcpman",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "The package manager for MCP servers",
   "type": "module",
   "bin": {
@@ -9,7 +9,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -23,7 +25,12 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "keywords": ["mcp", "model-context-protocol", "cli", "server-manager"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cli",
+    "server-manager"
+  ],
   "license": "MIT",
   "dependencies": {
     "@clack/prompts": "^0.9.1",
